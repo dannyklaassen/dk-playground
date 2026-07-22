@@ -12,8 +12,11 @@
         "laravel/tinker": "^3.0"
     },
     "require-dev": {
+        "barryvdh/laravel-ide-helper": "^3.7",
+        "driftingly/rector-laravel": "^2.5",
         "fakerphp/faker": "^1.23",
         "filament/blueprint": "^2.2",
+        "laravel-lang/common": "^6.8",
         "laravel/boost": "^2.2",
         "laravel/pail": "^1.2.5",
         "laravel/pao": "^1.0.6",
@@ -21,7 +24,8 @@
         "mockery/mockery": "^1.6",
         "nunomaduro/collision": "^8.6",
         "pestphp/pest": "^4.7",
-        "pestphp/pest-plugin-laravel": "^4.1"
+        "pestphp/pest-plugin-laravel": "^4.1",
+        "rector/rector": "^2.5"
     },
     "autoload": {
         "psr-4": {
@@ -48,9 +52,28 @@
             "Composer\\Config::disableProcessTimeout",
             "npx concurrently -c \"#93c5fd,#c4b5fd,#fb7185,#fdba74\" \"php artisan serve\" \"php artisan queue:listen --tries=1 --timeout=0\" \"php artisan pail --timeout=0\" \"npm run dev\" --names=server,queue,logs,vite --kill-others"
         ],
+        "rector": [
+            "vendor/bin/rector"
+        ],
+        "rector:dry-run": [
+            "vendor/bin/rector --dry-run"
+        ],
+        "code-quality": [
+            "@rector",
+            "pint --parallel"
+        ],
+        "code-quality:check": [
+            "@rector:dry-run",
+            "pint --parallel --test"
+        ],
         "test": [
-            "@php artisan config:clear --ansi @no_additional_args",
-            "@php artisan test"
+            "@php artisan config:clear --ansi",
+            "@code-quality:check",
+            "@php artisan test -p"
+        ],
+        "ci:check": [
+            "Composer\\Config::disableProcessTimeout",
+            "@test"
         ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
