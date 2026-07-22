@@ -14,6 +14,8 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\MarkdownEditor;
 use Filament\Infolists\Components\TextEntry;
+use Filament\Support\Assets\Css;
+use Filament\Support\Facades\FilamentAsset;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Date;
@@ -42,6 +44,10 @@ class AppServiceProvider extends ServiceProvider
 
     private function configureFilament(): void
     {
+        FilamentAsset::register([
+            Css::make('admin', resource_path('css/filament/admin.css')),
+        ]);
+
         CreateAction::configureUsing(function (CreateAction $action): void {
             $action->createAnotherAction(
                 fn (Action $action): Action => $action->label(__('common.actions.create_another')),
