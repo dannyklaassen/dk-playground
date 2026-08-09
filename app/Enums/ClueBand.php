@@ -37,4 +37,37 @@ enum ClueBand: string implements HasLabel
     {
         return __("common.clue_band_descriptions.{$this->value}");
     }
+
+    /**
+     * Which words to pick from the text. Separate from the clue type: this one
+     * is an instruction to the agent, the description above is help text under
+     * the level field.
+     */
+    public function getWordChoice(): string
+    {
+        return __("common.clue_band_word_choice.{$this->value}");
+    }
+
+    /**
+     * Only the lowest band may echo part of a compound. That band asks for a
+     * clue that nearly names the key word, which a blanket ban on word parts
+     * makes impossible; the full word stays off limits everywhere.
+     */
+    public function allowsWordPart(): bool
+    {
+        return $this === self::Band1To10;
+    }
+
+    /**
+     * A gap at the end lets the child read a full run-up and then answer. A gap
+     * mid-sentence forces it to combine the words before and after the gap,
+     * which is the harder reading skill and belongs on the upper bands.
+     *
+     * Independent of sentence variety: an ordinary sentence ending in its
+     * object also ends on the gap, so the low bands stay varied too.
+     */
+    public function requiresGapAtEnd(): bool
+    {
+        return $this === self::Band1To10 || $this === self::Band11To20;
+    }
 }

@@ -152,15 +152,6 @@ class CrosswordPuzzle extends Model
         return $grid;
     }
 
-    /**
-     * From level 21 up the clue points back into the text, so the worksheet has
-     * to tell the child which text to look in.
-     */
-    public function showsSource(): bool
-    {
-        return $this->level >= 21;
-    }
-
     /** The printed cell size in millimetres, scaled down for wide grids. */
     public function cellSizeMm(): float
     {

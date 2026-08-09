@@ -13,8 +13,11 @@
         border-bottom: 1px solid #111;
         padding-bottom: .25rem;
     }
-    /* Multicol instead of flex: only columns fragment correctly onto a next page. */
-    .clues { columns: 2; column-gap: 2rem; }
+    /* Two fixed columns, horizontal left and vertical right. Multicol would let
+       the second heading start wherever the first list happened to end.
+       ponytail: one row, so a list longer than a page does not reflow into the
+       next column; switch to multicol per direction if that ever happens. */
+    .clues { display: grid; grid-template-columns: 1fr 1fr; gap: 0 2rem; align-items: start; }
     .clues h2 { break-after: avoid; }
     .clue { margin-bottom: .5rem; break-inside: avoid; font-size: 11pt; line-height: 1.4; }
     .clue .number { font-weight: bold; }

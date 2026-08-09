@@ -156,22 +156,29 @@ it('keeps the entry number and the solution letter apart on a marked starting sq
     );
 });
 
-it('names the source text on the worksheet from level 21 up', function (): void {
-    $puzzle = puzzleWithSource(30);
+it('names the source text on the worksheet on every level', function (int $level): void {
+    $puzzle = puzzleWithSource($level);
 
     actingAs(User::factory()->create())
         ->get(route('crossword-puzzles.worksheet', $puzzle))
         ->assertOk()
         ->assertSee('Het leven van de tijger');
-});
+})->with([
+    'lowest level' => 1,
+    'below the old threshold' => 8,
+    'at the old threshold' => 21,
+    'highest level' => 50,
+]);
 
-it('leaves the source text off the worksheet below level 21', function (): void {
+it('lays the clues out in two fixed columns', function (): void {
     $puzzle = puzzleWithSource(8);
 
     actingAs(User::factory()->create())
         ->get(route('crossword-puzzles.worksheet', $puzzle))
         ->assertOk()
-        ->assertDontSee('Het leven van de tijger');
+        // Flowing text columns would let "Verticaal" start wherever "Horizontaal" ended.
+        ->assertSee('grid-template-columns: 1fr 1fr', escape: false)
+        ->assertDontSee('.clues { columns: 2', escape: false);
 });
 
 it('keeps rendering the worksheet when an entry carries no source text', function (): void {

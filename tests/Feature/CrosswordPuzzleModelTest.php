@@ -85,8 +85,3 @@ it('leaves the solution word empty without failing the puzzle when nothing match
         ->and($puzzle->entries)->not->toBeEmpty()
         ->and($puzzle->failed_at)->toBeNull();
 });
-
-it('only names the source text from level 21 up', function (): void {
-    expect(CrosswordPuzzle::factory()->create(['level' => 20])->showsSource())->toBeFalse()
-        ->and(CrosswordPuzzle::factory()->create(['level' => 21])->showsSource())->toBeTrue();
-});

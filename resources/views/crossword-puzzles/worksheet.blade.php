@@ -33,7 +33,7 @@
                     <p class="clue">
                         <span class="number">{{ $entry['number'] }}.</span>
                         {{ $entry['clue'] }}
-                        @if ($puzzle->showsSource() && isset($titles[$entry['exercise_id'] ?? '']))
+                        @if (isset($titles[$entry['exercise_id'] ?? '']))
                             <span class="source">{{ $titles[$entry['exercise_id']] }}</span>
                         @endif
                     </p>

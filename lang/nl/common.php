@@ -81,11 +81,18 @@ return [
         'band_41_50' => 'Level 41-50',
     ],
     'clue_band_descriptions' => [
-        'band_1_10' => 'Een letterlijke omschrijving waarin het sleutelwoord bijna genoemd wordt.',
-        'band_11_20' => 'Een definitie in eigen woorden met één denkstap.',
+        'band_1_10' => 'Een aanwijzing die het sleutelwoord bijna noemt, in een gewone zin.',
+        'band_11_20' => 'Een aanwijzing in eigen woorden met één denkstap.',
         'band_21_30' => 'Een aanwijzing die naar de tekst verwijst, zodat het kind moet terugzoeken.',
         'band_31_40' => 'Een aanwijzing die context gebruikt: oorzaak, gevolg of functie.',
         'band_41_50' => 'Een aanwijzing zonder sleutelwoorden, die om de hoofdgedachte vraagt.',
+    ],
+    'clue_band_word_choice' => [
+        'band_1_10' => 'Kies de meest alledaagse, concrete woorden uit de tekst: dingen die een kind kan zien, aanraken of dagelijks meemaakt. Vermijd vaktaal en abstracte begrippen, ook als de tekst die bevat.',
+        'band_11_20' => 'Kies concrete woorden, maar ook woorden die het kind wel kent en niet elke dag gebruikt. Nog geen vaktaal.',
+        'band_21_30' => 'Kies woorden die er voor de inhoud van de tekst toe doen, ook als ze minder alledaags zijn. Een enkel vakwoord dat de tekst uitlegt mag.',
+        'band_31_40' => 'Kies juist de woorden die de tekst inhoudelijk dragen, inclusief vaktaal en woorden die uit de context begrepen moeten worden.',
+        'band_41_50' => 'Kies de abstractste en meest vaktalige woorden uit de tekst: begrippen, processen en verschijnselen in plaats van zichtbare dingen.',
     ],
     'exercise_status' => [
         'pending' => 'Bezig',
