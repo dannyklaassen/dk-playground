@@ -29,7 +29,12 @@ class RelayoutCrosswordPuzzleAction extends Action
 
         $this->label(__('admin.crossword_puzzle.actions.relayout'))
             ->icon(Heroicon::ArrowsPointingOut)
+            // Only a laid grid can be reshuffled; a pending or failed puzzle has
+            // no candidates to work with.
             ->visible(fn (CrosswordPuzzle $record): bool => $record->status === ExerciseStatus::Generated)
+            // Laying the grid and matching the solution word both run inside the
+            // request, so a held-down button may not tie up a row of workers.
+            ->rateLimit(10)
             ->action(function (CrosswordPuzzle $record): void {
                 $candidates = array_map(
                     WordCandidate::fromArray(...),

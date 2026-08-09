@@ -66,6 +66,7 @@ return [
             'exercises' => 'Teksten',
             'group' => 'Niveau',
             'level' => 'Moeilijkheidsgraad',
+            'solution_word' => 'Puzzelwoord',
         ],
         'columns' => [
             'status' => 'Status',
@@ -81,14 +82,14 @@ return [
             'answer_sheet' => 'Antwoordblad',
         ],
         'actions' => [
-            'relayout' => 'Opnieuw leggen',
+            'relayout' => 'Rooster herschikken',
             'regenerate' => 'Opnieuw genereren',
             'worksheet' => 'Werkblad',
             'answer_sheet' => 'Antwoordblad',
         ],
         'notifications' => [
-            'relaid' => 'Het rooster is opnieuw gelegd.',
-            'relayout_failed' => 'Het rooster kon niet beter gelegd worden. De puzzel is niet gewijzigd.',
+            'relaid' => 'Het rooster is herschikt.',
+            'relayout_failed' => 'Het rooster kon niet beter herschikt worden. De puzzel is niet gewijzigd.',
             'regeneration_started' => 'De puzzel wordt opnieuw gegenereerd.',
         ],
         'help' => [
@@ -104,6 +105,7 @@ return [
             'name' => 'Naam',
             'across' => 'Horizontaal',
             'down' => 'Verticaal',
+            'solution_word' => 'Puzzelwoord',
         ],
     ],
 ];

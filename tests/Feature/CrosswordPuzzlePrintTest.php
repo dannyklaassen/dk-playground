@@ -73,10 +73,87 @@ it('shows the answer sheet with every letter filled in, in lower case', function
 
     preg_match_all('/<span class="letter">(.+?)<\/span>/', $html, $matches);
 
-    // TIJGER + IGLO + REGEN minus their two shared squares, every one of them
-    // in its own cell.
-    expect($letters)->toHaveCount(13)
+    // Ten entries of 58 letters minus their ten shared squares, every one of
+    // them in its own cell.
+    expect($letters)->toHaveCount(48)
         ->and($matches[1])->toBe($letters);
+});
+
+it('asks for the solution word on the worksheet without giving it away', function (): void {
+    $puzzle = CrosswordPuzzle::factory()->generated()->create();
+    $solutionWord = $puzzle->solutionWord();
+
+    $html = actingAs(User::factory()->create())
+        ->get(route('crossword-puzzles.worksheet', $puzzle))
+        ->assertOk()
+        ->assertSee(__('admin.crossword_puzzle.print.solution_word'))
+        ->assertDontSee($solutionWord->word)
+        ->assertDontSee($solutionWord->clue)
+        ->getContent();
+
+    // One marked square in the grid and one empty box underneath per letter.
+    expect(substr_count($html, 'class="filled marked"'))->toBe(count($solutionWord->cells))
+        ->and(substr_count($html, 'class="solution-label index"'))->toBe(count($solutionWord->cells));
+});
+
+it('prints the grey marking instead of letting the browser drop it', function (): void {
+    $puzzle = CrosswordPuzzle::factory()->generated()->create();
+
+    $html = actingAs(User::factory()->create())
+        ->get(route('crossword-puzzles.worksheet', $puzzle))
+        ->assertOk()
+        ->getContent();
+
+    expect($html)->toMatch('/\.crossword td\.marked \{[^}]*print-color-adjust: exact/s');
+});
+
+it('leaves the marking and the boxes off a worksheet without a solution word', function (): void {
+    $puzzle = CrosswordPuzzle::factory()->withoutSolutionWord()->create();
+
+    $html = actingAs(User::factory()->create())
+        ->get(route('crossword-puzzles.worksheet', $puzzle))
+        ->assertOk()
+        ->assertDontSee(__('admin.crossword_puzzle.print.solution_word'))
+        ->getContent();
+
+    expect($html)->not->toContain('class="filled marked"')
+        ->and($html)->not->toContain('solution-boxes');
+});
+
+it('shows the solution word in full on the answer sheet', function (): void {
+    $puzzle = CrosswordPuzzle::factory()->generated()->create();
+    $solutionWord = $puzzle->solutionWord();
+
+    $html = actingAs(User::factory()->create())
+        ->get(route('crossword-puzzles.answer-sheet', $puzzle))
+        ->assertOk()
+        ->assertSee(__('admin.crossword_puzzle.print.solution_word'))
+        ->assertSee(mb_strtolower($solutionWord->word))
+        ->getContent();
+
+    expect(substr_count($html, 'class="filled marked"'))->toBe(count($solutionWord->cells));
+});
+
+it('keeps the entry number and the solution letter apart on a marked starting square', function (): void {
+    // The B of BERGEN moved onto the numbered starting square of KORAAL.
+    $puzzle = CrosswordPuzzle::factory()->generated()->create();
+    $puzzle->forceFill([
+        'solution_word' => [
+            ...$puzzle->solution_word,
+            'cells' => [['row' => 3, 'col' => 15], ['row' => 2, 'col' => 0]],
+            'word' => 'BK',
+        ],
+    ])->save();
+
+    $html = actingAs(User::factory()->create())
+        ->get(route('crossword-puzzles.worksheet', $puzzle))
+        ->assertOk()
+        ->getContent();
+
+    // A digit for the entry and a letter for the solution word, in their own corners.
+    expect($html)->toMatch(
+        '/<td class="filled marked">\s*<span class="number">4<\/span>\s*<span class="solution-label">b<\/span>/',
+    );
 });
 
 it('names the source text on the worksheet from level 21 up', function (): void {

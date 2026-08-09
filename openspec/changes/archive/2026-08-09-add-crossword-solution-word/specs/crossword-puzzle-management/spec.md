@@ -1,48 +1,4 @@
-# crossword-puzzle-management
-
-## Purpose
-
-Beheer van kruiswoordpuzzels in het admin-panel: aanmaken via een slide-over-formulier op basis van gegenereerde begrijpend-leesoefeningen, de generatiestatus volgen, de puzzel bekijken, een werkblad en een apart antwoordblad printen, en het rooster opnieuw leggen of de puzzel opnieuw genereren.
-
-## Requirements
-
-### Requirement: Kruiswoordpuzzel aanmaken
-Het systeem MUST een ingelogde gebruiker in het admin-panel een kruiswoordpuzzel laten aanmaken via een slide-over-formulier met: begrijpend-leesoefeningen (verplicht, minimaal 3 en maximaal 6, alleen oefeningen waarvan `generated_at` gezet is), groep (verplicht, `PuzzleGroup`-enum met groep 4 t/m 8) en level (verplicht, geheel getal 1-50). Bij het gekozen level MUST de bijbehorende omschrijving van het aanwijzingstype als helptekst zichtbaar zijn, zoals de levelband dat bij een oefening doet. Het aantal woorden en de woordlengtes MUST NOT als formuliervelden aanwezig zijn: die volgen volledig uit de gekozen groep. Na opslaan MUST het record direct bestaan (status "bezig") en MUST de generatie-job gedispatcht worden.
-
-#### Scenario: Succesvol aanmaken
-- **WHEN** de gebruiker vier gegenereerde oefeningen selecteert, groep 6 en level 15 kiest en opslaat
-- **THEN** bestaat er een `CrosswordPuzzle` met die groep en dat level, zijn de vier oefeningen eraan gekoppeld, zijn `generated_at` en `failed_at` null, en is de generatie-job gedispatcht
-
-#### Scenario: Te weinig teksten geselecteerd
-- **WHEN** de gebruiker opslaat met twee geselecteerde oefeningen
-- **THEN** toont het formulier een validatiefout en wordt er geen record aangemaakt
-
-#### Scenario: Te veel teksten geselecteerd
-- **WHEN** de gebruiker probeert zeven oefeningen te selecteren
-- **THEN** staat het formulier dat niet toe en wordt er geen record aangemaakt
-
-#### Scenario: Alleen gegenereerde oefeningen selecteerbaar
-- **WHEN** de gebruiker de tekstselectie opent terwijl er oefeningen bestaan met status "bezig" of "mislukt"
-- **THEN** zijn alleen oefeningen met `generated_at` gezet selecteerbaar
-
-#### Scenario: Validatie van verplichte velden
-- **WHEN** de gebruiker opslaat zonder groep of level, of met een level buiten 1-50
-- **THEN** toont het formulier validatiefouten en wordt er geen record aangemaakt
-
-#### Scenario: Helptekst bij het level
-- **WHEN** de gebruiker level 25 kiest
-- **THEN** toont het formulier de omschrijving van het aanwijzingstype voor de band 21-30 (de aanwijzing verwijst naar de tekst, het kind moet terugzoeken)
-
-### Requirement: Lijstweergave met generatiestatus
-De lijstpagina MUST per puzzel minimaal de titel, groep, level, aantal gebruikte teksten, generatiestatus en aanmaakdatum tonen. De status MUST afgeleid worden uit de timestamps: beide null = "bezig", `generated_at` gezet = "klaar", `failed_at` gezet = "mislukt". Zolang een puzzel "bezig" is MUST de lijst de status zonder handmatige verversing actueel maken (polling). De tabel MUST NOT bulk-acties bevatten.
-
-#### Scenario: Status wordt vanzelf actueel
-- **WHEN** een puzzel wordt aangemaakt en de generatie op de achtergrond slaagt
-- **THEN** verandert de status in de lijst binnen de polling-interval van "bezig" naar "klaar" zonder dat de gebruiker de pagina ververst
-
-#### Scenario: Mislukte generatie zichtbaar
-- **WHEN** de generatie definitief mislukt is en `failed_at` gezet is
-- **THEN** toont de lijst de status "mislukt" voor die puzzel
+## MODIFIED Requirements
 
 ### Requirement: Detailweergave van een gegenereerde puzzel
 De View-pagina MUST voor een gegenereerde puzzel tonen: de invoergegevens (groep, level met de omschrijving van het aanwijzingstype, de gebruikte oefeningen), het gelegde rooster, en de aanwijzingen gesplitst in horizontaal en verticaal met per aanwijzing het nummer en de bron-oefening. Bij de Kenmerken MUST het puzzelwoord getoond worden met de aanwijzing van dat woord erbij; heeft de puzzel geen puzzelwoord, dan MUST dat veld leeg blijven in plaats van een lege plek te reserveren. Voor een puzzel die nog bezig of mislukt is MUST de pagina de status tonen in plaats van inhoud.

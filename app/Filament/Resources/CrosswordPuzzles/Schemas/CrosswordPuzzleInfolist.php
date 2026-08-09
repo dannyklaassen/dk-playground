@@ -55,6 +55,11 @@ class CrosswordPuzzleInfolist
                         TextEntry::make('level')
                             ->label(__('admin.crossword_puzzle.fields.level'))
                             ->helperText(fn (CrosswordPuzzle $record): string => $record->clue_band->getDescription()),
+                        TextEntry::make('solution_word')
+                            ->label(__('admin.crossword_puzzle.fields.solution_word'))
+                            ->state(fn (CrosswordPuzzle $record): ?string => $record->solutionWord()?->word)
+                            ->helperText(fn (CrosswordPuzzle $record): ?string => $record->solutionWord()?->clue)
+                            ->hidden(fn (CrosswordPuzzle $record): bool => $record->solution_word === null),
                         TextEntry::make('exercises')
                             ->label(__('admin.crossword_puzzle.fields.exercises'))
                             ->listWithLineBreaks()

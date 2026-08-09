@@ -90,6 +90,26 @@ it('calls the agent once per exercise and stores the candidates and the grid', f
     }
 });
 
+it('picks a solution word from the candidates that did not make the grid', function (): void {
+    CrosswordWordWriter::fake(array_map(agentPayload(...), PUZZLE_WORD_SETS));
+
+    $puzzle = puzzleWithExercises();
+
+    (new GenerateCrosswordPuzzle($puzzle))->handle();
+
+    $puzzle->refresh();
+
+    $solutionWord = $puzzle->solutionWord();
+    $placed = array_column($puzzle->entries, 'word');
+
+    expect($solutionWord)->not->toBeNull()
+        ->and($solutionWord->word)->not->toBeIn($placed)
+        ->and($solutionWord->word)->toBeIn(array_column($puzzle->candidates, 'word'))
+        ->and(mb_strlen($solutionWord->word))->toBeLessThanOrEqual(8)
+        ->and($solutionWord->cells)->toHaveCount(mb_strlen($solutionWord->word))
+        ->and(markedLetters($puzzle))->toBe($solutionWord->word);
+});
+
 it('marks the puzzle as failed when the candidates cannot be laid out', function (): void {
     // Enough candidates to pass validation, but no two of them share a letter,
     // so only the very first one can ever be placed.

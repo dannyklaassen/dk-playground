@@ -25,13 +25,13 @@ class ViewCrosswordPuzzle extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            OpenWorksheetAction::make(),
+            OpenAnswerSheetAction::make(),
             ActionGroup::make([
                 EditAction::make()
                     ->slideOver()
                     ->modalWidth(Width::Medium)
                     ->schema(CrosswordPuzzleForm::editSchema()),
-                OpenWorksheetAction::make(),
-                OpenAnswerSheetAction::make(),
                 RelayoutCrosswordPuzzleAction::make(),
                 RegenerateCrosswordPuzzleAction::make(),
                 DeleteAction::make(),

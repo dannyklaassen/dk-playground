@@ -23,6 +23,8 @@
 
     @include('crossword-puzzles.partials.grid', ['puzzle' => $puzzle, 'solved' => false])
 
+    @include('crossword-puzzles.partials.solution-word', ['puzzle' => $puzzle])
+
     <div class="clues">
         @foreach ([Direction::Across, Direction::Down] as $direction)
             <div>
@@ -32,7 +34,7 @@
                         <span class="number">{{ $entry['number'] }}.</span>
                         {{ $entry['clue'] }}
                         @if ($puzzle->showsSource() && isset($titles[$entry['exercise_id'] ?? '']))
-                            <span class="source">({{ $titles[$entry['exercise_id']] }})</span>
+                            <span class="source">{{ $titles[$entry['exercise_id']] }}</span>
                         @endif
                     </p>
                 @endforeach

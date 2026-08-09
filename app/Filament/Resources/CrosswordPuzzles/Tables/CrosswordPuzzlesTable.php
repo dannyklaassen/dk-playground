@@ -5,10 +5,6 @@ declare(strict_types=1);
 namespace App\Filament\Resources\CrosswordPuzzles\Tables;
 
 use App\Enums\ExerciseStatus;
-use App\Filament\Resources\CrosswordPuzzles\Actions\OpenAnswerSheetAction;
-use App\Filament\Resources\CrosswordPuzzles\Actions\OpenWorksheetAction;
-use App\Filament\Resources\CrosswordPuzzles\Actions\RegenerateCrosswordPuzzleAction;
-use App\Filament\Resources\CrosswordPuzzles\Actions\RelayoutCrosswordPuzzleAction;
 use App\Filament\Resources\CrosswordPuzzles\Schemas\CrosswordPuzzleForm;
 use App\Models\CrosswordPuzzle;
 use Filament\Actions\ActionGroup;
@@ -58,16 +54,14 @@ class CrosswordPuzzlesTable
                 ->whereNull('failed_at')
                 ->exists() ? '5s' : null)
             ->recordActions([
+                // Printing and regenerating live on the View page; the row keeps
+                // only what you do without opening the puzzle.
                 ActionGroup::make([
                     ViewAction::make(),
                     EditAction::make()
                         ->slideOver()
                         ->modalWidth(Width::Medium)
                         ->schema(CrosswordPuzzleForm::editSchema()),
-                    OpenWorksheetAction::make(),
-                    OpenAnswerSheetAction::make(),
-                    RelayoutCrosswordPuzzleAction::make(),
-                    RegenerateCrosswordPuzzleAction::make(),
                     DeleteAction::make(),
                 ])->icon(Heroicon::EllipsisVertical),
             ]);

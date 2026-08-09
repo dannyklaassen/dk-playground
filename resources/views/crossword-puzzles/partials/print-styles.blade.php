@@ -18,7 +18,15 @@
     .clues h2 { break-after: avoid; }
     .clue { margin-bottom: .5rem; break-inside: avoid; font-size: 11pt; line-height: 1.4; }
     .clue .number { font-weight: bold; }
-    .clue .source { color: #666; font-size: 9pt; }
+    /* On its own line and quiet: the clue leads, the source text only helps. */
+    .clue .source {
+        display: block;
+        margin-top: .35rem;
+        color: #888;
+        font-size: 8.5pt;
+        font-style: italic;
+        line-height: 1.2;
+    }
     @media print {
         .clues { break-before: page; }
     }

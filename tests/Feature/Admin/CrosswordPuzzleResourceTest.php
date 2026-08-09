@@ -323,6 +323,28 @@ describe('the view page', function (): void {
             ->assertSee(ComprehensionExerciseResource::getUrl('view', ['record' => $exercise->id]), escape: false);
     });
 
+    it('shows the solution word with its clue among the details', function (): void {
+        $puzzle = CrosswordPuzzle::factory()->generated()->create();
+        $solutionWord = $puzzle->solutionWord();
+
+        livewire(ViewCrosswordPuzzle::class, ['record' => $puzzle->id])
+            ->assertOk()
+            ->assertSee(__('admin.crossword_puzzle.fields.solution_word'))
+            ->assertSee($solutionWord->word)
+            ->assertSee($solutionWord->clue);
+    });
+
+    it('leaves the solution word out for a puzzle that has none', function (): void {
+        $puzzle = CrosswordPuzzle::factory()->withoutSolutionWord()->create();
+
+        $html = livewire(ViewCrosswordPuzzle::class, ['record' => $puzzle->id])
+            ->assertOk()
+            ->assertDontSee(__('admin.crossword_puzzle.fields.solution_word'))
+            ->html();
+
+        expect($html)->not->toContain('class="filled marked"');
+    });
+
     it('shows the status instead of content for a pending puzzle', function (): void {
         $puzzle = CrosswordPuzzle::factory()->create();
 
@@ -344,91 +366,12 @@ describe('the view page', function (): void {
 });
 
 describe('the row actions', function (): void {
-    it('relays out the grid with a new seed and without calling the agent', function (): void {
-        // Any agent call would now throw instead of being answered by the fake.
-        CrosswordWordWriter::fake()->preventStrayPrompts();
-
-        $puzzle = CrosswordPuzzle::factory()->generated()->create(['seed' => 1]);
-        $candidates = $puzzle->candidates;
-
-        livewire(ListCrosswordPuzzles::class)
-            ->callAction(TestAction::make('relayout')->table($puzzle))
-            ->assertNotified(__('admin.crossword_puzzle.notifications.relaid'));
-
-        $puzzle->refresh();
-
-        expect($puzzle->seed)->not->toBe(1)
-            ->and($puzzle->candidates)->toBe($candidates)
-            ->and($puzzle->entries)->not->toBeEmpty()
-            ->and($puzzle->generated_at)->not->toBeNull();
-    });
-
-    it('leaves the puzzle alone when the new layout would be worse', function (): void {
-        // A single candidate can never fill half of the words, so the reroll is refused.
-        $puzzle = CrosswordPuzzle::factory()->generated()->create();
-        $puzzle->forceFill(['candidates' => [$puzzle->candidates[0]]])->save();
-
-        $before = $puzzle->only(['seed', 'entries', 'grid_rows', 'grid_cols']);
-
-        livewire(ListCrosswordPuzzles::class)
-            ->callAction(TestAction::make('relayout')->table($puzzle))
-            ->assertNotified(__('admin.crossword_puzzle.notifications.relayout_failed'));
-
-        expect($puzzle->refresh()->only(array_keys($before)))->toBe($before);
-    });
-
-    it('regenerates a puzzle by resetting its status and dispatching the job', function (): void {
-        Queue::fake();
-
-        $puzzle = CrosswordPuzzle::factory()->failed()->create();
-
-        livewire(ListCrosswordPuzzles::class)
-            ->callAction(TestAction::make('regenerate')->table($puzzle))
-            ->assertNotified();
-
-        $puzzle->refresh();
-
-        expect($puzzle->failed_at)->toBeNull()
-            ->and($puzzle->generated_at)->toBeNull();
-
-        Queue::assertPushed(GenerateCrosswordPuzzle::class);
-    });
-
-    it('hides the relayout action for a puzzle that is not generated', function (): void {
-        $puzzle = CrosswordPuzzle::factory()->failed()->create();
-
-        livewire(ListCrosswordPuzzles::class)
-            ->assertActionHidden(TestAction::make('relayout')->table($puzzle));
-    });
-
-    it('links the print actions to their pages for a generated puzzle', function (): void {
+    it('keeps printing and regenerating off the row', function (string $action): void {
         $puzzle = CrosswordPuzzle::factory()->generated()->create();
 
         livewire(ListCrosswordPuzzles::class)
-            ->assertActionVisible(TestAction::make('worksheet')->table($puzzle))
-            ->assertActionHasUrl(
-                TestAction::make('worksheet')->table($puzzle),
-                route('crossword-puzzles.worksheet', $puzzle),
-            )
-            ->assertActionVisible(TestAction::make('answerSheet')->table($puzzle))
-            ->assertActionHasUrl(
-                TestAction::make('answerSheet')->table($puzzle),
-                route('crossword-puzzles.answer-sheet', $puzzle),
-            );
-    });
-
-    it('hides the print actions for a puzzle that is not generated', function (bool $failed): void {
-        $puzzle = $failed
-            ? CrosswordPuzzle::factory()->failed()->create()
-            : CrosswordPuzzle::factory()->create();
-
-        livewire(ListCrosswordPuzzles::class)
-            ->assertActionHidden(TestAction::make('worksheet')->table($puzzle))
-            ->assertActionHidden(TestAction::make('answerSheet')->table($puzzle));
-    })->with([
-        'pending' => false,
-        'failed' => true,
-    ]);
+            ->assertActionDoesNotExist(TestAction::make($action)->table($puzzle));
+    })->with(['worksheet', 'answerSheet', 'relayout', 'regenerate']);
 
     it('renames a puzzle from the table', function (): void {
         $puzzle = CrosswordPuzzle::factory()->generated()->create(['title' => 'Oude naam']);
@@ -478,5 +421,125 @@ describe('the row actions', function (): void {
             ->assertNotified();
 
         assertDatabaseMissing(CrosswordPuzzle::class, ['id' => $puzzle->id]);
+    });
+});
+
+describe('the view page actions', function (): void {
+    it('offers the print sheets as their own buttons, outside the group', function (): void {
+        $puzzle = CrosswordPuzzle::factory()->generated()->create();
+
+        livewire(ViewCrosswordPuzzle::class, ['record' => $puzzle->id])
+            ->assertActionVisible(TestAction::make('worksheet'))
+            ->assertActionHasUrl(
+                TestAction::make('worksheet'),
+                route('crossword-puzzles.worksheet', $puzzle),
+            )
+            ->assertActionVisible(TestAction::make('answerSheet'))
+            ->assertActionHasUrl(
+                TestAction::make('answerSheet'),
+                route('crossword-puzzles.answer-sheet', $puzzle),
+            );
+    });
+
+    it('hides the print actions for a puzzle that is not generated', function (bool $failed): void {
+        $puzzle = $failed
+            ? CrosswordPuzzle::factory()->failed()->create()
+            : CrosswordPuzzle::factory()->create();
+
+        livewire(ViewCrosswordPuzzle::class, ['record' => $puzzle->id])
+            ->assertActionHidden(TestAction::make('worksheet'))
+            ->assertActionHidden(TestAction::make('answerSheet'));
+    })->with([
+        'pending' => false,
+        'failed' => true,
+    ]);
+
+    it('relays out the grid with a new seed and without calling the agent', function (): void {
+        // Any agent call would now throw instead of being answered by the fake.
+        CrosswordWordWriter::fake()->preventStrayPrompts();
+
+        $puzzle = CrosswordPuzzle::factory()->generated()->create(['seed' => 1]);
+        $candidates = $puzzle->candidates;
+
+        livewire(ViewCrosswordPuzzle::class, ['record' => $puzzle->id])
+            ->callAction(TestAction::make('relayout'))
+            ->assertNotified(__('admin.crossword_puzzle.notifications.relaid'));
+
+        $puzzle->refresh();
+
+        // Fourteen candidates stay off the grid, so the reroll always has a
+        // stock left to pick from: no solution word at all is a failure here.
+        $solutionWord = $puzzle->solutionWord();
+
+        expect($puzzle->seed)->not->toBe(1)
+            ->and($puzzle->candidates)->toBe($candidates)
+            ->and($puzzle->entries)->not->toBeEmpty()
+            ->and($puzzle->generated_at)->not->toBeNull()
+            ->and($solutionWord)->not->toBeNull()
+            // The marked squares belong to the new grid, not to the old one.
+            ->and(markedLetters($puzzle))->toBe($solutionWord->word);
+    });
+
+    it('leaves the puzzle alone when the new layout would be worse', function (): void {
+        // A single candidate can never fill half of the words, so the reroll is refused.
+        $puzzle = CrosswordPuzzle::factory()->generated()->create();
+        $puzzle->forceFill(['candidates' => [$puzzle->candidates[0]]])->save();
+
+        $before = $puzzle->only(['seed', 'entries', 'solution_word', 'grid_rows', 'grid_cols']);
+
+        livewire(ViewCrosswordPuzzle::class, ['record' => $puzzle->id])
+            ->callAction(TestAction::make('relayout'))
+            ->assertNotified(__('admin.crossword_puzzle.notifications.relayout_failed'));
+
+        expect($puzzle->refresh()->only(array_keys($before)))->toBe($before);
+    });
+
+    it('offers reshuffling the grid only for a generated puzzle', function (): void {
+        $generated = CrosswordPuzzle::factory()->generated()->create();
+        $failed = CrosswordPuzzle::factory()->failed()->create();
+        $pending = CrosswordPuzzle::factory()->create();
+
+        livewire(ViewCrosswordPuzzle::class, ['record' => $generated->id])
+            ->assertActionVisible(TestAction::make('relayout'));
+
+        livewire(ViewCrosswordPuzzle::class, ['record' => $failed->id])
+            ->assertActionHidden(TestAction::make('relayout'));
+
+        livewire(ViewCrosswordPuzzle::class, ['record' => $pending->id])
+            ->assertActionHidden(TestAction::make('relayout'));
+    });
+
+    it('offers regenerating for anything but a finished puzzle', function (): void {
+        // Also for a pending puzzle: a job that dies without failing the record
+        // leaves this button as the only way out.
+        $failed = CrosswordPuzzle::factory()->failed()->create();
+        $generated = CrosswordPuzzle::factory()->generated()->create();
+        $pending = CrosswordPuzzle::factory()->create();
+
+        livewire(ViewCrosswordPuzzle::class, ['record' => $failed->id])
+            ->assertActionVisible(TestAction::make('regenerate'));
+
+        livewire(ViewCrosswordPuzzle::class, ['record' => $pending->id])
+            ->assertActionVisible(TestAction::make('regenerate'));
+
+        livewire(ViewCrosswordPuzzle::class, ['record' => $generated->id])
+            ->assertActionHidden(TestAction::make('regenerate'));
+    });
+
+    it('regenerates a puzzle by resetting its status and dispatching the job', function (): void {
+        Queue::fake();
+
+        $puzzle = CrosswordPuzzle::factory()->failed()->create();
+
+        livewire(ViewCrosswordPuzzle::class, ['record' => $puzzle->id])
+            ->callAction(TestAction::make('regenerate'))
+            ->assertNotified();
+
+        $puzzle->refresh();
+
+        expect($puzzle->failed_at)->toBeNull()
+            ->and($puzzle->generated_at)->toBeNull();
+
+        Queue::assertPushed(GenerateCrosswordPuzzle::class);
     });
 });

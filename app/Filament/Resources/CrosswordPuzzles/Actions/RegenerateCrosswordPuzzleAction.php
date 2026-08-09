@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\CrosswordPuzzles\Actions;
 
+use App\Enums\ExerciseStatus;
 use App\Jobs\GenerateCrosswordPuzzle;
 use App\Models\CrosswordPuzzle;
 use Filament\Actions\Action;
@@ -24,6 +25,11 @@ class RegenerateCrosswordPuzzleAction extends Action
 
         $this->label(__('admin.crossword_puzzle.actions.regenerate'))
             ->icon(Heroicon::ArrowPath)
+            // A rescue, not a reroll: a puzzle that came out fine has nothing to
+            // gain from six more paid agent calls. A puzzle stuck on "pending"
+            // (job died without `failed()` running) does need this button, or
+            // there is no way back at all.
+            ->visible(fn (CrosswordPuzzle $record): bool => $record->status !== ExerciseStatus::Generated)
             ->requiresConfirmation()
             // Every run costs six paid agent calls, so a repeated click may not
             // keep queueing work.

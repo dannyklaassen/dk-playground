@@ -17,5 +17,7 @@
     <h1>{{ $puzzle->title }}</h1>
 
     @include('crossword-puzzles.partials.grid', ['puzzle' => $puzzle, 'solved' => true])
+
+    @include('crossword-puzzles.partials.solution-word', ['puzzle' => $puzzle, 'solved' => true])
 </body>
 </html>
