@@ -4,28 +4,15 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $exercise->title }} — {{ __('admin.comprehension_exercise.print.worksheet_title') }}</title>
+    @include('partials.print-base')
     <style>
-        * { box-sizing: border-box; }
-        body {
-            font-family: Georgia, 'Times New Roman', serif;
-            font-size: 12pt;
-            line-height: 1.6;
-            color: #111;
-            max-width: 48rem;
-            margin: 0 auto;
-            padding: 2rem;
-        }
         header {
             display: flex;
             justify-content: space-between;
             align-items: baseline;
-            border-bottom: 2px solid #111;
-            padding-bottom: .5rem;
-            margin-bottom: 1.5rem;
             font-size: 10pt;
         }
         header .meta span { display: inline-block; margin-left: 1.5rem; }
-        header .meta .line { display: inline-block; width: 10rem; border-bottom: 1px solid #111; }
         h1 { font-size: 18pt; margin: 0 0 1rem; }
         .paragraph {
             margin-bottom: .75rem;
@@ -60,8 +47,6 @@
         }
         .option .letter { font-weight: bold; width: 1.25rem; }
         @media print {
-            body { padding: 0; }
-            @page { margin: 2cm; }
             h2 { break-before: page; margin-top: 0; }
         }
     </style>

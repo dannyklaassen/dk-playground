@@ -4,22 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $exercise->title }} — {{ __('admin.comprehension_exercise.print.answer_sheet_title') }}</title>
+    @include('partials.print-base', ['fontSize' => '11pt', 'lineHeight' => '1.5'])
     <style>
-        * { box-sizing: border-box; }
-        body {
-            font-family: Georgia, 'Times New Roman', serif;
-            font-size: 11pt;
-            line-height: 1.5;
-            color: #111;
-            max-width: 48rem;
-            margin: 0 auto;
-            padding: 2rem;
-        }
-        header {
-            border-bottom: 2px solid #111;
-            padding-bottom: .5rem;
-            margin-bottom: 1.5rem;
-        }
         h1 { font-size: 16pt; margin: 0; }
         h1 small { font-weight: normal; font-size: 11pt; display: block; }
         table { width: 100%; border-collapse: collapse; margin-bottom: 2rem; table-layout: fixed; }
@@ -29,10 +15,6 @@
         td.center, th.center { text-align: center; }
         .evidence { margin-bottom: .75rem; break-inside: avoid; }
         .evidence strong { display: block; }
-        @media print {
-            body { padding: 0; }
-            @page { margin: 2cm; }
-        }
     </style>
 </head>
 <body>

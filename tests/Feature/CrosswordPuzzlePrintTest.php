@@ -1,0 +1,167 @@
+<?php
+
+declare(strict_types=1);
+
+use App\Models\ComprehensionExercise;
+use App\Models\CrosswordPuzzle;
+use App\Models\User;
+use Illuminate\Support\Facades\Gate;
+
+use function Pest\Laravel\actingAs;
+use function Pest\Laravel\get;
+
+/** A generated puzzle whose entries all point at one attached source text. */
+function puzzleWithSource(int $level): CrosswordPuzzle
+{
+    $puzzle = CrosswordPuzzle::factory()->generated()->create(['level' => $level, 'title' => 'Dierenpuzzel']);
+    $exercise = ComprehensionExercise::factory()->generated()->create(['title' => 'Het leven van de tijger']);
+
+    $puzzle->exercises()->attach($exercise);
+
+    $puzzle->forceFill([
+        'entries' => array_map(
+            fn (array $entry): array => [...$entry, 'exercise_id' => $exercise->id],
+            $puzzle->entries,
+        ),
+    ])->save();
+
+    return $puzzle;
+}
+
+/**
+ * Every solution letter of the grid, lower case, in the order the cells render.
+ *
+ * @return list<string>
+ */
+function solutionLetters(CrosswordPuzzle $puzzle): array
+{
+    return collect($puzzle->cells())
+        ->flatten(1)
+        ->filter()
+        ->pluck('letter')
+        ->map(fn (string $letter): string => mb_strtolower($letter))
+        ->values()
+        ->all();
+}
+
+it('shows the worksheet with the clues but without any answer', function (): void {
+    $puzzle = CrosswordPuzzle::factory()->generated()->create();
+
+    $response = actingAs(User::factory()->create())
+        ->get(route('crossword-puzzles.worksheet', $puzzle))
+        ->assertOk()
+        ->assertSee(__('admin.crossword_puzzle.print.across'))
+        ->assertSee(__('admin.crossword_puzzle.print.down'))
+        ->assertSee($puzzle->entries[0]['clue']);
+
+    foreach ($puzzle->entries as $entry) {
+        $response->assertDontSee($entry['word']);
+    }
+
+    expect(substr_count($response->getContent(), '<span class="letter">'))->toBe(0);
+});
+
+it('shows the answer sheet with every letter filled in, in lower case', function (): void {
+    $puzzle = CrosswordPuzzle::factory()->generated()->create();
+    $letters = solutionLetters($puzzle);
+
+    $html = actingAs(User::factory()->create())
+        ->get(route('crossword-puzzles.answer-sheet', $puzzle))
+        ->assertOk()
+        ->assertSee(__('admin.crossword_puzzle.print.answer_sheet_title'))
+        ->getContent();
+
+    preg_match_all('/<span class="letter">(.+?)<\/span>/', $html, $matches);
+
+    // TIJGER + IGLO + REGEN minus their two shared squares, every one of them
+    // in its own cell.
+    expect($letters)->toHaveCount(13)
+        ->and($matches[1])->toBe($letters);
+});
+
+it('names the source text on the worksheet from level 21 up', function (): void {
+    $puzzle = puzzleWithSource(30);
+
+    actingAs(User::factory()->create())
+        ->get(route('crossword-puzzles.worksheet', $puzzle))
+        ->assertOk()
+        ->assertSee('Het leven van de tijger');
+});
+
+it('leaves the source text off the worksheet below level 21', function (): void {
+    $puzzle = puzzleWithSource(8);
+
+    actingAs(User::factory()->create())
+        ->get(route('crossword-puzzles.worksheet', $puzzle))
+        ->assertOk()
+        ->assertDontSee('Het leven van de tijger');
+});
+
+it('keeps rendering the worksheet when an entry carries no source text', function (): void {
+    $puzzle = puzzleWithSource(30);
+
+    $puzzle->forceFill([
+        'entries' => array_map(
+            function (array $entry): array {
+                unset($entry['exercise_id']);
+
+                return $entry;
+            },
+            $puzzle->entries,
+        ),
+    ])->save();
+
+    actingAs(User::factory()->create())
+        ->get(route('crossword-puzzles.worksheet', $puzzle))
+        ->assertOk()
+        ->assertDontSee('Het leven van de tijger');
+});
+
+it('returns 404 for a worksheet of a puzzle that is not generated', function (): void {
+    $puzzle = CrosswordPuzzle::factory()->create();
+
+    actingAs(User::factory()->create())
+        ->get(route('crossword-puzzles.worksheet', $puzzle))
+        ->assertNotFound();
+});
+
+it('returns 404 for an answer sheet of a puzzle that is not generated', function (): void {
+    $puzzle = CrosswordPuzzle::factory()->failed()->create();
+
+    actingAs(User::factory()->create())
+        ->get(route('crossword-puzzles.answer-sheet', $puzzle))
+        ->assertNotFound();
+});
+
+it('refuses the worksheet to someone who may not view the puzzle', function (): void {
+    $puzzle = CrosswordPuzzle::factory()->generated()->create();
+
+    Gate::before(fn (User $user, string $ability): ?bool => $ability === 'view' ? false : null);
+
+    actingAs(User::factory()->create())
+        ->get(route('crossword-puzzles.worksheet', $puzzle))
+        ->assertForbidden();
+});
+
+it('refuses the answer sheet on its own ability, with the worksheet still allowed', function (): void {
+    $puzzle = CrosswordPuzzle::factory()->generated()->create();
+
+    Gate::before(fn (User $user, string $ability): ?bool => $ability === 'viewSolution' ? false : null);
+
+    actingAs(User::factory()->create())
+        ->get(route('crossword-puzzles.answer-sheet', $puzzle))
+        ->assertForbidden();
+
+    actingAs(User::factory()->create())
+        ->get(route('crossword-puzzles.worksheet', $puzzle))
+        ->assertOk();
+});
+
+it('requires authentication for the crossword print pages', function (): void {
+    $puzzle = CrosswordPuzzle::factory()->generated()->create();
+
+    get(route('crossword-puzzles.worksheet', $puzzle))
+        ->assertRedirect(route('filament.admin.auth.login'));
+    get(route('crossword-puzzles.answer-sheet', $puzzle))
+        ->assertRedirect(route('filament.admin.auth.login'));
+});

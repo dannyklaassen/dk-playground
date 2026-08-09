@@ -127,7 +127,7 @@ class ComprehensionExerciseInfolist
 
     private static function questionNumber(TextEntry $component): ?int
     {
-        preg_match('/questions\.(\d+)\./', $component->getStatePath(), $matches);
+        preg_match('/questions\.(\d+)\./', (string) $component->getStatePath(), $matches);
 
         return isset($matches[1]) ? $matches[1] + 1 : null;
     }
